@@ -1,17 +1,18 @@
 #!/bin/bash
-# Make sure this file has executable permissions, run `chmod +x build-app.sh`
-
-# Exit the script if any command fails
 set -e
 
-# Build assets using NPM
-npm run build
+# Skip cache clearing if cache table doesn't exist
+php artisan tinker --execute="try { DB::select('SELECT 1 FROM cache LIMIT 1'); } catch (\Exception \$e) { exit(0); }" || true
 
-# Clear cache
-php artisan optimize:clear
+# Install dependencies
+composer install --optimize-autoloader --no-dev
 
-# Cache the various components of the Laravel application
+# Build assets
+if [ -f "package.json" ]; then
+    npm install && npm run build
+fi
+
+# Optimize Laravel
 php artisan config:cache
-php artisan event:cache
 php artisan route:cache
 php artisan view:cache
